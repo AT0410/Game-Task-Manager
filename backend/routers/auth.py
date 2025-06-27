@@ -1,9 +1,13 @@
 from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
-from backend.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from backend.models import Token
 from backend.utils.security import authenticate_user, create_access_token
+
+import os
+from dotenv import load_dotenv 
+
+load_dotenv()
 
 router = APIRouter(tags=["auth"])
 
@@ -16,7 +20,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")))
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
