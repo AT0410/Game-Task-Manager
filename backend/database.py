@@ -61,6 +61,6 @@ class UserDatabase:
 if __name__ == "__main__":
     user_db = UserDatabase()
     
-    user_db.create_user("test", "Test User", "test@gmail.com", "password", False)
+    # user_db.create_user("test", "Test User", "test@gmail.com", "password", False)
     print(user_db.get_user("test"))
         
