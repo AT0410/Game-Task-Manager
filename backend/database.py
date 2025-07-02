@@ -1,4 +1,4 @@
-from models import UserInDB
+from backend.models import UserInDB
 import psycopg2
 from psycopg2 import pool
 from contextlib import contextmanager
@@ -58,9 +58,19 @@ class UserDatabase:
         """
         execute_query(query, (username, full_name, email, hashed_password, disabled))
         
+    def delete_user(self, username: str) -> None:
+        query = f"""
+            DELETE FROM {self.table_name} WHERE username = %s;
+        """
+        execute_query(query, (username,))
+        
+user_db = UserDatabase()
+
+        
 if __name__ == "__main__":
     user_db = UserDatabase()
     
+    user_db.delete_user("test")
     # user_db.create_user("test", "Test User", "test@gmail.com", "password", False)
     print(user_db.get_user("test"))
         

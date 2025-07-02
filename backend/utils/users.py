@@ -2,7 +2,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
 from backend.models import TokenData, UserInDB
-from backend.database import get_user
+from backend.database import user_db
 
 import os
 from dotenv import load_dotenv 
@@ -25,7 +25,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_user(username=token_data.username)
+    user = user_db.get_user(username=token_data.username)
     if user is None:
         raise credentials_exception
     return user

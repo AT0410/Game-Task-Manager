@@ -1,7 +1,7 @@
 from jose import jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
-from backend.database import get_user
+from backend.database import user_db
 
 import os
 from dotenv import load_dotenv 
@@ -18,7 +18,7 @@ def get_password_hash(pw: str) -> str:
 
 
 def authenticate_user(username: str, pw: str):
-    user = get_user(username)
+    user = user_db.get_user(username)
     if not user:
         return False
     if not verify_password(pw, user.hashed_password):

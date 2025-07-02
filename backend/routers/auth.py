@@ -1,8 +1,9 @@
 from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
-from backend.models import Token
-from backend.utils.security import authenticate_user, create_access_token
+from backend.models import Token, UserRegister
+from backend.utils.security import authenticate_user, create_access_token, get_password_hash
+from ..database import user_db
 
 import os
 from dotenv import load_dotenv 
@@ -25,3 +26,19 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/register")
+def register_user(user: UserRegister):
+    print(user)
+    db_user = user_db.get_user(user.username)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered.")
+    hashed_password = get_password_hash(user.password)
+    user_db.create_user(
+        username=user.username,
+        full_name=user.fullname,
+        email=user.email,
+        hashed_password=hashed_password
+    )
+    print("success")

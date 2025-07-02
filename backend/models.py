@@ -16,3 +16,10 @@ class User(BaseModel):
 class UserInDB(User):
     id: int
     hashed_password: str
+    
+class UserRegister(BaseModel):
+    username: str
+    fullname: str
+    email: str
+    password: str
+    
