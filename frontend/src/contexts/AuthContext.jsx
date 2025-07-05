@@ -12,37 +12,40 @@ export function useAuth() {
 const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [userID, setUserID] = useState(-1);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (token) {
-      const getUser = async () => {
-        try {
-          const user_id = await fetchUserID(token);
-          setUserID(user_id);
-        } catch (err) {
-          if (err.response?.status === 401) {
-            logout();
-          } else {
-            console.error("Fetch user ID failed:", err);
-          }
+    if (!token) {
+      setLoading(false);
+      logout();
+      return;
+    }
+    const getUser = async () => {
+      try {
+        console.log("set userid");
+        setLoading(true);
+        const user_id = await fetchUserID(token);
+        setUserID(user_id);
+        console.log("done setting userid");
+      } catch (err) {
+        if (err.response?.status === 401) {
+          logout();
+        } else {
+          console.error("Fetch user ID failed:", err);
+          setUserID(-1);
         }
-      };
-      getUser();
-    }
+      } finally {
+        setLoading(false);
+      }
+    };
+    getUser();
   }, [token]);
-
-  useEffect(() => {
-    if (userID > 0) {
-      navigate("/profile");
-    } else {
-      navigate("/login");
-    }
-  }, [userID, navigate]);
 
   const register = async (fullname, email, password) => {
     await registerUser({ fullname, email, password });
+    login(email, password);
   };
 
   const login = async (username, password) => {
@@ -52,6 +55,7 @@ const AuthProvider = ({ children }) => {
       localStorage.setItem("token", response.access_token);
       const id = await fetchUserID(response.access_token);
       setUserID(id);
+      navigate("/profile");
     }
   };
 
@@ -62,7 +66,7 @@ const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ userID, login, logout, register }}>
+    <AuthContext.Provider value={{ userID, login, logout, register, loading }}>
       {children}
     </AuthContext.Provider>
   );

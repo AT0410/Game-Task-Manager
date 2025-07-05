@@ -1,7 +1,8 @@
 from backend.models import UserInDB, UserVerification
-import psycopg2
 from psycopg2 import pool
 from contextlib import contextmanager
+from typing import Optional
+import datetime
 
 CONN_POOL = pool.SimpleConnectionPool(
     1, 20, host="localhost", dbname="postgres", user="postgres", password="b1uesH33p#", port="5432"
@@ -34,7 +35,7 @@ class UserDatabase:
     def __init__(self):
         self.table_name = "users"
 
-    def get_user_verification(self, email: str) -> UserVerification | None:
+    def get_user_verification(self, email: str) -> Optional[UserVerification]:
         query = f"""
         SELECT id, hashed_password FROM {self.table_name} WHERE email = %s
         """
@@ -47,7 +48,7 @@ class UserDatabase:
             )
         return None
         
-    def get_user(self, email: str) -> UserInDB | None:
+    def get_user(self, email: str) -> Optional[UserInDB]:
         query = f"""
         SELECT * FROM {self.table_name} WHERE email = %s
         """
@@ -77,13 +78,54 @@ class UserDatabase:
         """
         execute_query(query, (email,))
         
+
+class TaskDatabase:
+    def __init__(self):
+        self.table_name = "tasks"
+    
+    def add_task(self, user_id: int, title: str, due_date: datetime.datetime, description: Optional[str] = None, 
+                 completed: bool = False, category: Optional[str] = None):
+        data = {
+            'user_id':    user_id,
+            'title':      title,
+            'due_date':   due_date,
+            'description': description,
+            'completed':   completed,
+            'category':    category
+        }
+        
+        fields   = []
+        vals   = []
+        for field, val in data.items():
+            if val is not None:
+                fields.append(field)
+                vals.append(val)
+                
+        fields_query = ', '.join(fields)
+        placeholders = ', '.join(['%s'] * len(vals))
+        query = f"""
+        INSERT INTO {self.table_name} ({fields_query})
+        VALUES ({placeholders})
+        """
+        execute_query(query, tuple(vals))
+        
+    def delete_task(self, task_id: int):
+        query = f"""
+            DELETE FROM {self.table_name} WHERE id = %s;
+        """
+        execute_query(query, (task_id,))
+    
+        
+
+        
+# global variables
 user_db = UserDatabase()
+task_db = TaskDatabase()
 
         
 if __name__ == "__main__":
-    user_db = UserDatabase()
+    user_db.delete_user("1234@gmail.com")
+    # task_db.add_task(9, "test", datetime.datetime(2025, 4, 10, 10, 3), "1")
+    # task_db.delete_task(1)
     
-    user_db.delete_user("test")
-    # user_db.create_user("test", "Test User", "test@gmail.com", "password", False)
-    print(user_db.get_user("test"))
         
