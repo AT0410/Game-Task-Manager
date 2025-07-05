@@ -1,15 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 
-const Auth = (children) => {
-  const { user } = useAuth();
+const Auth = ({children}) => {
+  const { userID } = useAuth();
   const navigate = useNavigate();
+  console.log(userID)
 
-  if (!user) {
-    console.log("not logged in");
-    navigate("/login");
-  }
+  useEffect(() => {
+    if (userID < 0) navigate("/login");
+  }, [userID, navigate]);
+
   return children;
 };
 

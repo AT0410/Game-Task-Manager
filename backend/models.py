@@ -5,10 +5,9 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    username: str | None = None
+    user_id: int | None = None
     
 class User(BaseModel):
-    username: str
     full_name: str | None = None
     email: str | None = None
     disabled: bool | None = None
@@ -18,8 +17,10 @@ class UserInDB(User):
     hashed_password: str
     
 class UserRegister(BaseModel):
-    username: str
     fullname: str
     email: str
     password: str
-    
+
+class UserVerification(BaseModel):
+    id: int
+    hashed_password: str    

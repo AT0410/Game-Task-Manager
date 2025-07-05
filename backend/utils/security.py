@@ -17,13 +17,16 @@ def get_password_hash(pw: str) -> str:
     return pwd_context.hash(pw)
 
 
-def authenticate_user(username: str, pw: str):
-    user = user_db.get_user(username)
+def authenticate_user(email: str, pw: str):
+    """
+    Returns user id 
+    """
+    user = user_db.get_user_verification(email)
     if not user:
         return False
     if not verify_password(pw, user.hashed_password):
         return False
-    return user
+    return user.id
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()

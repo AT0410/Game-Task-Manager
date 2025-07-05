@@ -3,74 +3,37 @@ import { useNavigate } from "react-router-dom";
 import api from "../api";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
+import { useAuth } from "../contexts/AuthContext";
 
 function Login() {
-  // const [loginData, setLoginData] = useState({
-  //   username: "",
-  //   password: "",
-  // });
+  const { login } = useAuth();
+  const [loginData, setLoginData] = useState({
+    email: "",
+    password: "",
+  });
 
-  // const [error, setError] = useState("");
-  // const [loading, setLoading] = useState(false);
 
-  // const { login } = useContext(AuthContext);
 
-  // const handleChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setLoginData({
-  //     ...loginData,
-  //     [name]: value,
-  //   });
-  // };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setLoginData({
+      ...loginData,
+      [name]: value,
+    });
+  };
 
-  // const navigate = useNavigate();
-
-  // const validateForm = () => {
-  //   if (!loginData.username || !loginData.password) {
-  //     setError("Fill in all required fields");
-  //     return false;
-  //   }
-  //   setError("");
-  //   return true;
-  // };
-
-  // const handleSubmit = async (event) => {
-  //   event.preventDefault();
-  //   if (!validateForm()) return;
-  //   setLoading(true);
-
-  //   const formData = new URLSearchParams();
-  //   formData.append("username", loginData.username);
-  //   formData.append("password", loginData.password);
-
-  //   try {
-  //     const response = await api.post("/token", formDetails, {
-  //       headers: {
-  //         "Content-Type": "application/x-www-form-urlencoded",
-  //       },
-  //     });
-
-  //     localStorage.setItem("access_token", response.data.access_token);
-  //     navigate("/home");
-  //   } catch (error) {
-  //     if (error.response) {
-  //       const detail = error.response.data.detail || "Authentication failed!";
-  //       setError(detail);
-  //     } else {
-  //       setError(error.message);
-  //     }
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    login(loginData.email, loginData.password);
+  };
 
   return (
     <>
       <h1>Login</h1>
-      <Form>
+      <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="formBasicEmail">
           <Form.Label>Email address</Form.Label>
-          <Form.Control type="email" placeholder="Enter email" />
+          <Form.Control type="email" name="email" placeholder="Enter email" onChange={handleChange} />
           <Form.Text className="text-muted">
             We'll never share your email with anyone else.
           </Form.Text>
@@ -78,9 +41,9 @@ function Login() {
 
         <Form.Group className="mb-3" controlId="formBasicPassword">
           <Form.Label>Password</Form.Label>
-          <Form.Control type="password" placeholder="Password" />
+          <Form.Control type="password" name="password" placeholder="Password" onChange={handleChange} />
         </Form.Group>
-        <Button variant="primary" type="submit">
+        <Button variant="primary" type="submit" >
           Submit
         </Button>
       </Form>

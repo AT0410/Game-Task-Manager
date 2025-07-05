@@ -1,4 +1,4 @@
-from backend.models import UserInDB
+from backend.models import UserInDB, UserVerification
 import psycopg2
 from psycopg2 import pool
 from contextlib import contextmanager
@@ -33,36 +33,49 @@ def execute_query(query: str, params: tuple = ()):
 class UserDatabase:
     def __init__(self):
         self.table_name = "users"
-        
-    def get_user(self, username: str) -> UserInDB | None:
+
+    def get_user_verification(self, email: str) -> UserVerification | None:
         query = f"""
-        SELECT * FROM {self.table_name} WHERE username = %s
+        SELECT id, hashed_password FROM {self.table_name} WHERE email = %s
         """
-        result = fetch_query(query, (username,))
+        result = fetch_query(query, (email,))
+        if result:
+            user_data = result[0]
+            return UserVerification (
+                id=user_data[0],
+                hashed_password=user_data[1]
+            )
+        return None
+        
+    def get_user(self, email: str) -> UserInDB | None:
+        query = f"""
+        SELECT * FROM {self.table_name} WHERE email = %s
+        """
+        result = fetch_query(query, (email,))
+
         if result:
             user_data = result[0]
             return UserInDB(
                 id = user_data[0],
-                username=user_data[1],
-                full_name=user_data[2],
-                email=user_data[3],
-                hashed_password=user_data[4],
-                disabled=user_data[5]
+                full_name=user_data[1],
+                email=user_data[2],
+                hashed_password=user_data[3],
+                disabled=user_data[4]
             )
         return None
     
-    def create_user(self, username: str, full_name: str, email: str, hashed_password: str, disabled: bool = False) -> None:
+    def create_user(self, full_name: str, email: str, hashed_password: str, disabled: bool = False) -> None:
         query = f"""
-            INSERT INTO {self.table_name} (username, full_name, email, hashed_password, disabled)
-            VALUES (%s, %s, %s, %s, %s);
+            INSERT INTO {self.table_name} (full_name, email, hashed_password, disabled)
+            VALUES ( %s, %s, %s, %s);
         """
-        execute_query(query, (username, full_name, email, hashed_password, disabled))
+        execute_query(query, (full_name, email, hashed_password, disabled))
         
-    def delete_user(self, username: str) -> None:
+    def delete_user(self, email: str) -> None:
         query = f"""
-            DELETE FROM {self.table_name} WHERE username = %s;
+            DELETE FROM {self.table_name} WHERE email = %s;
         """
-        execute_query(query, (username,))
+        execute_query(query, (email,))
         
 user_db = UserDatabase()
 

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { registerUser } from "../api.js";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { registerUser, loginUser, fetchUserID } from "../api.js";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext({});
 
@@ -10,21 +11,38 @@ export function useAuth() {
 
 const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [userID, setUserID] = useState(-1);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (token) {
       const getUser = async () => {
-        const user = await fetchUserProfile(token);
-        setUser(user);
+        try {
+          const user_id = await fetchUserID(token);
+          setUserID(user_id);
+        } catch (err) {
+          if (err.response?.status === 401) {
+            logout();
+          } else {
+            console.error("Fetch user ID failed:", err);
+          }
+        }
       };
       getUser();
     }
   }, [token]);
 
-  const register = async (username, fullname, email, password) => {
-    await registerUser({ username, fullname, email, password });
+  useEffect(() => {
+    if (userID > 0) {
+      navigate("/profile");
+    } else {
+      navigate("/login");
+    }
+  }, [userID, navigate]);
+
+  const register = async (fullname, email, password) => {
+    await registerUser({ fullname, email, password });
   };
 
   const login = async (username, password) => {
@@ -32,21 +50,19 @@ const AuthProvider = ({ children }) => {
     if (response?.access_token) {
       setToken(response.access_token);
       localStorage.setItem("token", response.access_token);
-      const userProfile = await fetchUserProfile(response.access_token);
-      setUser(userProfile);
-      navigate("/home");
+      const id = await fetchUserID(response.access_token);
+      setUserID(id);
     }
   };
 
   const logout = () => {
     setToken(null);
-    setUser(null);
+    setUserID(-1);
     localStorage.removeItem("token");
-    navigate("/login");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, loading }}>
+    <AuthContext.Provider value={{ userID, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

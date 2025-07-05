@@ -7,7 +7,6 @@ import { useAuth } from "../contexts/AuthContext";
 const Register = () => {
   const { register } = useAuth();
   const [formData, setFormData] = useState({
-    username: "",
     fullname: "",
     email: "",
     password: "",
@@ -15,7 +14,7 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    register(formData.username, formData.fullname, formData.email, formData.password);
+    register(formData.fullname, formData.email, formData.password);
   };
 
   const handleChange = (e) => {
@@ -29,18 +28,6 @@ const Register = () => {
     <>
       <h1>Register</h1>
       <Form onSubmit={handleSubmit}>
-        <FloatingLabel
-          controlId="floatingInput"
-          label="Username"
-          className="mb-3"
-        >
-          <Form.Control
-            type="text"
-            name="username"
-            placeholder="username"
-            onChange={handleChange}
-          />
-        </FloatingLabel>
         <FloatingLabel
           controlId="floatingInput"
           label="Full Name"
