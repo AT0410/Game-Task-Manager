@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import Button from "react-bootstrap/Button";
@@ -12,7 +12,14 @@ function Login() {
     password: "",
   });
 
+  const { userID } = useAuth();
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    if (userID > 1) {
+      navigate("/profile");
+    }
+  }, [userID, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,7 +40,12 @@ function Login() {
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="formBasicEmail">
           <Form.Label>Email address</Form.Label>
-          <Form.Control type="email" name="email" placeholder="Enter email" onChange={handleChange} />
+          <Form.Control
+            type="email"
+            name="email"
+            placeholder="Enter email"
+            onChange={handleChange}
+          />
           <Form.Text className="text-muted">
             We'll never share your email with anyone else.
           </Form.Text>
@@ -41,9 +53,14 @@ function Login() {
 
         <Form.Group className="mb-3" controlId="formBasicPassword">
           <Form.Label>Password</Form.Label>
-          <Form.Control type="password" name="password" placeholder="Password" onChange={handleChange} />
+          <Form.Control
+            type="password"
+            name="password"
+            placeholder="Password"
+            onChange={handleChange}
+          />
         </Form.Group>
-        <Button variant="primary" type="submit" >
+        <Button variant="primary" type="submit">
           Submit
         </Button>
       </Form>

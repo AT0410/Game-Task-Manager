@@ -115,6 +115,14 @@ class TaskDatabase:
         """
         execute_query(query, (task_id,))
     
+    def get_tasks(self, user_id: int):
+        query = f"""
+        SELECT id, title, description, due_date, completed, category FROM {self.table_name} WHERE user_id = %s
+        """
+        tasks = fetch_query(query, (user_id, ))
+        return tasks
+        
+    
         
 
         
@@ -124,7 +132,8 @@ task_db = TaskDatabase()
 
         
 if __name__ == "__main__":
-    user_db.delete_user("1234@gmail.com")
+    # task_db.add_task(10, "Basketball", datetime.datetime(2025, 10, 10))
+    task_db.get_tasks(10)
     # task_db.add_task(9, "test", datetime.datetime(2025, 4, 10, 10, 3), "1")
     # task_db.delete_task(1)
     

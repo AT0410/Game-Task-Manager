@@ -45,5 +45,32 @@ const registerUser = async (userData) => {
   }
 };
 
+const getTasks = async (token) => {
+  try {
+    const response = await api.get("/user/tasks", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(response)
+    const headers = [
+      "id",
+      "title",
+      "description",
+      "due_date",
+      "completed",
+      "category",
+    ];
+    const rows = response.data
+    const dict = rows.map((row) =>
+      Object.fromEntries(headers.map((colName, idx) => [colName, row[idx]]))
+    );
+    return dict
+  } catch (error) {
+    console.error("Error retrieving tasks:", error);
+    throw error;
+  }
+};
+
 export default api;
-export { fetchUserID, registerUser, loginUser };
+export { fetchUserID, registerUser, loginUser, getTasks };
