@@ -106,14 +106,16 @@ class TaskDatabase:
         query = f"""
         INSERT INTO {self.table_name} ({fields_query})
         VALUES ({placeholders})
+        RETURNING id
         """
-        execute_query(query, tuple(vals))
+        ret = fetch_query(query, tuple(vals))
+        return ret[0][0]
         
-    def delete_task(self, task_id: int):
+    def delete_task(self, task_id: int, user_id: int):
         query = f"""
-            DELETE FROM {self.table_name} WHERE id = %s;
+            DELETE FROM {self.table_name} WHERE id = %s AND user_id = %s;
         """
-        execute_query(query, (task_id,))
+        execute_query(query, (task_id, user_id))
     
     def get_tasks(self, user_id: int):
         query = f"""
@@ -132,8 +134,8 @@ task_db = TaskDatabase()
 
         
 if __name__ == "__main__":
-    # task_db.add_task(10, "Basketball", datetime.datetime(2025, 10, 10))
-    task_db.get_tasks(10)
+    task_db.add_task(10, "Homework", datetime.datetime(2025, 10, 10))
+    # task_db.get_tasks(10)
     # task_db.add_task(9, "test", datetime.datetime(2025, 4, 10, 10, 3), "1")
     # task_db.delete_task(1)
     

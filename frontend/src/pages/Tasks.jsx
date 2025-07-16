@@ -14,12 +14,15 @@ import NavbarComp from "../components/Navbar";
 import { FaTrash, FaPlus, FaCheck, FaUndo } from "react-icons/fa";
 import Auth from "../components/Auth";
 import { useAuth } from "../contexts/AuthContext";
-import { getTasks } from "../api";
+import { getTasks, addTask, deleteTaskAPI } from "../api";
+import { NiceDate, getIsoString } from "../components/Date";
 
 function Tasks() {
   const { token } = useAuth();
   const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
 
   useEffect(() => {
     async function fetchTasks() {
@@ -35,15 +38,28 @@ function Tasks() {
     }
   }, [token]);
 
-  const handleAdd = (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault();
-    if (!newTask.trim()) return;
-    const nextId = tasks.length ? Math.max(...tasks.map((t) => t.id)) + 1 : 1;
-    setTasks([...tasks, { id: nextId, text: newTask.trim(), finished: false }]);
-    setNewTask("");
+    if (!newTitle.trim() || !newDate || !newTime) return;
+    const newTask = {
+      title: newTitle.trim(),
+      due_date: getIsoString(newDate, newTime),
+      completed: false,
+    };
+    try {
+      const task_id = await addTask(token, newTask);
+      newTask.id = task_id;
+
+      setTasks([...tasks, newTask]);
+      setNewTitle("");
+      setNewDate("");
+      setNewTime("");
+    } catch (err) {
+      console.error("Failed to add task:", err);
+    }
   };
 
-  const markFinished = (id) => {
+  const markCompleted = (id) => {
     setTasks(tasks.map((t) => (t.id === id ? { ...t, completed: true } : t)));
   };
 
@@ -51,12 +67,17 @@ function Tasks() {
     setTasks(tasks.map((t) => (t.id === id ? { ...t, completed: false } : t)));
   };
 
-  const deleteTask = (id) => {
-    setTasks(tasks.filter((t) => t.id !== id));
+  const  deleteTask = async (id) => {
+    try {
+      await deleteTaskAPI(token, id);
+      setTasks(tasks.filter((t) => t.id !== id));
+    } catch (err) {
+      console.log("Fail to delete task:", err);
+    }
   };
 
-  const ongoing = tasks.filter((t) => !t.completed);
-  const finished = tasks.filter((t) => t.completed);
+  const ongoingTasks = tasks.filter((t) => !t.completed);
+  const completedTasks = tasks.filter((t) => t.completed);
 
   return (
     <Auth>
@@ -74,9 +95,19 @@ function Tasks() {
             <Form onSubmit={handleAdd}>
               <InputGroup>
                 <Form.Control
-                  placeholder="New task..."
-                  value={newTask}
-                  onChange={(e) => setNewTask(e.target.value)}
+                  placeholder="New title..."
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                />
+                <Form.Control
+                  type="date"
+                  value={newDate}
+                  onChange={(e) => setNewDate(e.target.value)}
+                />
+                <Form.Control
+                  type="time"
+                  value={newTime}
+                  onChange={(e) => setNewTime(e.target.value)}
                 />
                 <Button variant="primary" type="submit">
                   <FaPlus /> Add
@@ -91,46 +122,58 @@ function Tasks() {
           <Col md={6} className="mb-4">
             <Card>
               <Card.Header>
-                Ongoing Tasks <Badge bg="secondary">{ongoing.length}</Badge>
+                Ongoing Tasks{" "}
+                <Badge bg="secondary">{ongoingTasks.length}</Badge>
               </Card.Header>
               <ListGroup variant="flush">
-                {ongoing.map((task) => (
+                {ongoingTasks.map((task) => (
                   <ListGroup.Item
                     key={task.id}
                     className="d-flex justify-content-between align-items-center"
                   >
-                    {task.title}
+                    <div>
+                      <strong>{task.title}</strong>
+                      <small className="text-muted ms-2">
+                        Due: {NiceDate(task.due_date)}
+                      </small>
+                    </div>
                     <Button
                       variant="success"
                       size="sm"
-                      onClick={() => markFinished(task.id)}
+                      onClick={() => markCompleted(task.id)}
                     >
                       <FaCheck />
                     </Button>
                   </ListGroup.Item>
                 ))}
-                {ongoing.length === 0 && (
+                {ongoingTasks.length === 0 && (
                   <ListGroup.Item>No ongoing tasks</ListGroup.Item>
                 )}
               </ListGroup>
             </Card>
           </Col>
 
-          {/* Finished Tasks */}
+          {/* Completed Tasks */}
           <Col md={6} className="mb-4">
             <Card>
               <Card.Header>
-                Finished Tasks <Badge bg="success">{finished.length}</Badge>
+                Completed Tasks{" "}
+                <Badge bg="success">{completedTasks.length}</Badge>
               </Card.Header>
               <ListGroup variant="flush">
-                {finished.map((task) => (
+                {completedTasks.map((task) => (
                   <ListGroup.Item
                     key={task.id}
                     className="d-flex justify-content-between align-items-center"
                   >
-                    <span style={{ textDecoration: "line-through" }}>
-                      {task.title}
-                    </span>
+                    <div>
+                      <span style={{ textDecoration: "line-through" }}>
+                        {task.title}
+                      </span>
+                      <small className="text-muted ms-2">
+                        Due: {NiceDate(task.due_date)}
+                      </small>
+                    </div>
                     <div>
                       <Button
                         variant="outline-primary"
@@ -150,8 +193,8 @@ function Tasks() {
                     </div>
                   </ListGroup.Item>
                 ))}
-                {finished.length === 0 && (
-                  <ListGroup.Item>No finished tasks</ListGroup.Item>
+                {completedTasks.length === 0 && (
+                  <ListGroup.Item>No completed tasks</ListGroup.Item>
                 )}
               </ListGroup>
             </Card>

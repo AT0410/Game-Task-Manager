@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 class Token(BaseModel):
     access_token: str
@@ -24,3 +25,8 @@ class UserRegister(BaseModel):
 class UserVerification(BaseModel):
     id: int
     hashed_password: str    
+
+class TaskCreate(BaseModel):
+    title: str
+    due_date: datetime
+    completed: bool

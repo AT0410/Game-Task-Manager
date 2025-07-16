@@ -52,7 +52,6 @@ const getTasks = async (token) => {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log(response)
     const headers = [
       "id",
       "title",
@@ -61,16 +60,50 @@ const getTasks = async (token) => {
       "completed",
       "category",
     ];
-    const rows = response.data
+    const rows = response.data;
     const dict = rows.map((row) =>
       Object.fromEntries(headers.map((colName, idx) => [colName, row[idx]]))
     );
-    return dict
+    console.log(dict);
+    return dict;
   } catch (error) {
     console.error("Error retrieving tasks:", error);
     throw error;
   }
 };
 
+const addTask = async (token, taskData) => {
+  try {
+    const id = await api.post("/user/addtask", taskData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return id;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const deleteTaskAPI = async (token, taskid) => {
+  try {
+    const id = await api.delete(`/user/deletetask/${taskid}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return id;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export default api;
-export { fetchUserID, registerUser, loginUser, getTasks };
+export {
+  fetchUserID,
+  registerUser,
+  loginUser,
+  getTasks,
+  addTask,
+  deleteTaskAPI,
+};
