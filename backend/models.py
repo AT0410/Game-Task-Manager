@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 class Token(BaseModel):
     access_token: str
@@ -30,3 +31,12 @@ class TaskCreate(BaseModel):
     title: str
     due_date: datetime
     completed: bool
+    
+class TaskUpdate(BaseModel):
+    id: int
+    title: Optional[str] = None
+    due_date: Optional[datetime] = None
+    completed: Optional[bool] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    

@@ -85,25 +85,29 @@ const addTask = async (token, taskData) => {
   }
 };
 
-const deleteTaskAPI = async (token, taskid) => {
+const deleteTask = async (token, taskid) => {
   try {
-    const id = await api.delete(`/user/deletetask/${taskid}`, {
+    await api.delete(`/user/deletetask/${taskid}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    return id;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const updateTask = async (token, taskData) => {
+  try {
+    await api.patch("/user/updatetask", taskData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   } catch (error) {
     throw error;
   }
 };
 
 export default api;
-export {
-  fetchUserID,
-  registerUser,
-  loginUser,
-  getTasks,
-  addTask,
-  deleteTaskAPI,
-};
+export { fetchUserID, registerUser, loginUser, getTasks, addTask, deleteTask, updateTask };

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from backend.models import User, TaskCreate
+from backend.models import User, TaskCreate, TaskUpdate
 from backend.utils.users import get_current_user_id
 from backend.database import task_db
 
@@ -27,3 +27,7 @@ async def add_user_task(task: TaskCreate, current_user_id: int =  Depends(get_cu
 @router.delete("/user/deletetask/{task_id}")
 async def delete_user_task(task_id: int, current_user_id: int = Depends(get_current_user_id)):
     task_db.delete_task(task_id, current_user_id)
+    
+@router.patch("/user/updatetask")
+async def delete_user_task(taskData: TaskUpdate, current_user_id: int = Depends(get_current_user_id)):
+    task_db.update_task(taskData, current_user_id)

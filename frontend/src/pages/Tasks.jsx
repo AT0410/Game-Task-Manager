@@ -9,13 +9,28 @@ import {
   Form,
   InputGroup,
   Badge,
+  Modal,
+  Collapse,
 } from "react-bootstrap";
 import NavbarComp from "../components/Navbar";
-import { FaTrash, FaPlus, FaCheck, FaUndo } from "react-icons/fa";
+import {
+  FaTrash,
+  FaPlus,
+  FaCheck,
+  FaUndo,
+  FaChevronUp,
+  FaEdit,
+  FaChevronDown,
+} from "react-icons/fa";
 import Auth from "../components/Auth";
 import { useAuth } from "../contexts/AuthContext";
-import { getTasks, addTask, deleteTaskAPI } from "../api";
-import { NiceDate, getIsoString } from "../components/Date";
+import { getTasks, addTask, deleteTask, updateTask } from "../api";
+import {
+  NiceDate,
+  getIsoString,
+  getLocalDate,
+  getLocalTime,
+} from "../components/Date";
 
 function Tasks() {
   const { token } = useAuth();
@@ -23,12 +38,16 @@ function Tasks() {
   const [newTitle, setNewTitle] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTask, setEditTask] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     async function fetchTasks() {
       try {
         const data = await getTasks(token);
         setTasks(data);
+        console.log(data);
       } catch (err) {
         console.error("Failed to load tasks:", err);
       }
@@ -59,25 +78,107 @@ function Tasks() {
     }
   };
 
-  const markCompleted = (id) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, completed: true } : t)));
-  };
-
-  const markOngoing = (id) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, completed: false } : t)));
-  };
-
-  const  deleteTask = async (id) => {
+  const handleUpdate = async (id, updates) => {
     try {
-      await deleteTaskAPI(token, id);
+      await updateTask(token, { id, ...updates });
+      setTasks(tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+    } catch (err) {
+      console.log("Failed to update tasks:", err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteTask(token, id);
       setTasks(tasks.filter((t) => t.id !== id));
     } catch (err) {
       console.log("Fail to delete task:", err);
     }
   };
 
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
+  // Edit modal
+  const openEdit = (task) => {
+    const date = getLocalDate(task.due_date);
+    const time = getLocalTime(task.due_date);
+    setEditTask({
+      ...task,
+      date: date,
+      time: time,
+    });
+    setShowEdit(true);
+  };
+
+  const saveEdit = async () => {
+    const { id, date, time, ...task } = editTask;
+    const due_date = getIsoString(date, time);
+    handleUpdate(id, { ...task, due_date });
+    setTasks((ts) =>
+      ts.map((t) => (t.id === id ? { ...task, id, due_date } : t))
+    );
+    setShowEdit(false);
+  };
+
   const ongoingTasks = tasks.filter((t) => !t.completed);
   const completedTasks = tasks.filter((t) => t.completed);
+
+  const renderTaskItem = (task) => (
+    <React.Fragment key={task.id}>
+      <ListGroup.Item
+        key={task.id}
+        className="d-flex justify-content-between align-items-center"
+      >
+        <div
+          style={{ flex: 1, cursor: "pointer" }}
+          onClick={() => toggleExpand(task.id)}
+        >
+          <strong>{task.title}</strong>
+          <small className="text-muted ms-2">
+            Due: {NiceDate(task.due_date)}
+          </small>
+        </div>
+        <div>
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => toggleExpand(task.id)}
+          >
+            {expandedId === task.id ? <FaChevronUp /> : <FaChevronDown />}
+          </Button>
+          <Button
+            size="sm"
+            variant={task.completed ? "secondary" : "success"}
+            className="me-2"
+            onClick={() =>
+              handleUpdate(task.id, { completed: !task.completed })
+            }
+          >
+            {task.completed ? <FaUndo /> : <FaCheck />}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline-danger"
+            onClick={() => handleDelete(task.id)}
+          >
+            <FaTrash />
+          </Button>
+        </div>
+      </ListGroup.Item>
+      <Collapse in={expandedId === task.id}>
+        <div className="bg-light p-3">
+          <p>
+            <strong>Description:</strong> {task.description || "No description"}
+          </p>
+          <Button size="sm" onClick={() => openEdit(task)}>
+            Edit Details
+          </Button>
+        </div>
+      </Collapse>
+    </React.Fragment>
+  );
 
   return (
     <Auth>
@@ -118,7 +219,6 @@ function Tasks() {
         </Row>
 
         <Row>
-          {/* Ongoing Tasks */}
           <Col md={6} className="mb-4">
             <Card>
               <Card.Header>
@@ -126,34 +226,11 @@ function Tasks() {
                 <Badge bg="secondary">{ongoingTasks.length}</Badge>
               </Card.Header>
               <ListGroup variant="flush">
-                {ongoingTasks.map((task) => (
-                  <ListGroup.Item
-                    key={task.id}
-                    className="d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <strong>{task.title}</strong>
-                      <small className="text-muted ms-2">
-                        Due: {NiceDate(task.due_date)}
-                      </small>
-                    </div>
-                    <Button
-                      variant="success"
-                      size="sm"
-                      onClick={() => markCompleted(task.id)}
-                    >
-                      <FaCheck />
-                    </Button>
-                  </ListGroup.Item>
-                ))}
-                {ongoingTasks.length === 0 && (
-                  <ListGroup.Item>No ongoing tasks</ListGroup.Item>
-                )}
+                {ongoingTasks.map(renderTaskItem)}
               </ListGroup>
             </Card>
           </Col>
 
-          {/* Completed Tasks */}
           <Col md={6} className="mb-4">
             <Card>
               <Card.Header>
@@ -161,45 +238,96 @@ function Tasks() {
                 <Badge bg="success">{completedTasks.length}</Badge>
               </Card.Header>
               <ListGroup variant="flush">
-                {completedTasks.map((task) => (
-                  <ListGroup.Item
-                    key={task.id}
-                    className="d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <span style={{ textDecoration: "line-through" }}>
-                        {task.title}
-                      </span>
-                      <small className="text-muted ms-2">
-                        Due: {NiceDate(task.due_date)}
-                      </small>
-                    </div>
-                    <div>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="me-2"
-                        onClick={() => markOngoing(task.id)}
-                      >
-                        <FaUndo />
-                      </Button>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => deleteTask(task.id)}
-                      >
-                        <FaTrash />
-                      </Button>
-                    </div>
-                  </ListGroup.Item>
-                ))}
-                {completedTasks.length === 0 && (
-                  <ListGroup.Item>No completed tasks</ListGroup.Item>
-                )}
+                {completedTasks.map(renderTaskItem)}
               </ListGroup>
             </Card>
           </Col>
         </Row>
+
+        {/* Edit Modal */}
+        <Modal show={showEdit} onHide={() => setShowEdit(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Edit Task</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {" "}
+            {editTask && (
+              <Form>
+                <Row className="g-2">
+                  <Col>
+                    <Form.Group>
+                      <Form.Label>Title</Form.Label>
+                      <Form.Control
+                        value={editTask.title}
+                        onChange={(e) =>
+                          setEditTask((et) => ({
+                            ...et,
+                            title: e.target.value,
+                          }))
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+
+                  <Col>
+                    <Form.Group>
+                      <Form.Label>Due Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        value={editTask.date}
+                        onChange={(e) =>
+                          setEditTask((et) => ({
+                            ...et,
+                            date: e.target.value,
+                          }))
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+
+                  <Col>
+                    <Form.Group>
+                      <Form.Label>Due Time</Form.Label>
+                      <Form.Control
+                        type="time"
+                        value={editTask.time}
+                        onChange={(e) =>
+                          setEditTask((et) => ({
+                            ...et,
+                            time: e.target.value,
+                          }))
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Form.Group className="mt-3">
+                  <Form.Label>Description</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    value={editTask.description || ""}
+                    onChange={(e) =>
+                      setEditTask((et) => ({
+                        ...et,
+                        description: e.target.value,
+                      }))
+                    }
+                  />
+                </Form.Group>
+              </Form>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEdit(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={saveEdit}>
+              Save
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </Container>
     </Auth>
   );

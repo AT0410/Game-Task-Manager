@@ -123,7 +123,25 @@ class TaskDatabase:
         """
         tasks = fetch_query(query, (user_id, ))
         return tasks
+    
+    def update_task(self, task_data, user_id: int):
+        fields   = []
+        vals   = []
+        for field, val in task_data.model_dump(exclude_unset=True).items():
+            if field == "id":
+                continue
+            fields.append(f"{field} = %s")
+            vals.append(val)
+        vals += [task_data.id, user_id]        
         
+        placeholders = ', '.join(fields)
+        
+        query = f"""
+        UPDATE {self.table_name}
+        SET {placeholders}
+        WHERE id = %s AND user_id = %s
+        """
+        execute_query(query, tuple(vals))
     
         
 
