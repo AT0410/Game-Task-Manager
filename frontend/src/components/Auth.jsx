@@ -1,20 +1,28 @@
 import React, { useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
+import Loading from "./Loading.jsx";
+import NavbarComp from "./Navbar.jsx";
 
 const Auth = ({ children }) => {
-  const { userID, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && userID < 1) {
+    if (!loading && !user) {
+      console.log(user);
       navigate("/login");
     }
-  }, [loading, userID, navigate]);
+  }, [loading, user, navigate]);
 
   // Now you can safely return early
   if (loading) {
-    return <h1>Loading…</h1>;
+    return (
+      <>
+        <NavbarComp />
+        <Loading />
+      </>
+    );
   }
 
   return children;

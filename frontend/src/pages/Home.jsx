@@ -1,114 +1,150 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  ListGroup,
+  Button,
+  Badge,
+} from "react-bootstrap";
 import NavbarComp from "../components/Navbar";
-import { Navbar, Nav, Container, Button, Row, Col, Card, Carousel } from 'react-bootstrap';
+import Auth from "../components/Auth";
+import { useAuth } from "../contexts/AuthContext";
+import { getTasks } from "../api";
+import { NiceDate } from "../components/Date";
+import Loading from "../components/Loading";
 
-function Home({ items, heading, onSelectItem }) {
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+function Home() {
+  const { token, user } = useAuth();
+  const [tasks, setTasks] = useState(null);
+  const [dueThisWeek, setDueThisWeek] = useState([]);
+
+  useEffect(() => {
+    async function fetchTasks() {
+      try {
+        const data = await getTasks(token);
+        setTasks(data);
+        const now = new Date();
+        const weekAhead = new Date(now);
+        weekAhead.setDate(now.getDate() + 7);
+        const upcoming = data.filter((t) => {
+          const d = new Date(t.due_date);
+          return d >= now && d <= weekAhead && !t.completed;
+        });
+
+        setDueThisWeek(upcoming);
+      } catch (err) {
+        console.error("Failed to load tasks:", err);
+      }
+    }
+    if (token) {
+      fetchTasks();
+    }
+  }, [token]);
+
+  if (tasks === null || user === null) {
+    return (
+      <Auth>
+        <NavbarComp />
+        <Loading />
+      </Auth>
+    );
+  }
+
+  const total = tasks.length;
+  const completed = tasks.filter((t) => t.completed).length;
+  const ongoing = total - completed;
 
   return (
-    <>
-      {/* Navigation Bar */}
-      <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
-        <Container>
-          <Navbar.Brand href="#home">MyApp</Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="ms-auto">
-              <Nav.Link href="#features">Features</Nav.Link>
-              <Nav.Link href="#about">About</Nav.Link>
-              <Nav.Link href="#contact">Contact</Nav.Link>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
-
-      {/* Hero Carousel */}
-      <Carousel>
-        <Carousel.Item>
-          <img
-            className="d-block w-100"
-            src="https://via.placeholder.com/1200x400"
-            alt="First slide"
-          />
-          <Carousel.Caption>
-            <h3>Welcome to MyApp</h3>
-            <p>Building awesome experiences with React Bootstrap.</p>
-            <Button variant="primary" href="#features">
-              Learn More
-            </Button>
-          </Carousel.Caption>
-        </Carousel.Item>
-        <Carousel.Item>
-          <img
-            className="d-block w-100"
-            src="https://via.placeholder.com/1200x400"
-            alt="Second slide"
-          />
-          <Carousel.Caption>
-            <h3>Seamless Integration</h3>
-            <p>Combine React with Bootstrap components effortlessly.</p>
-            <Button variant="light" href="#about">
-              Get Started
-            </Button>
-          </Carousel.Caption>
-        </Carousel.Item>
-      </Carousel>
-
-      {/* Features Section */}
-      <Container id="features" className="my-5">
-        <h2 className="text-center mb-4">Features</h2>
-        <Row xs={1} md={2} lg={3} className="g-4">
+    <Auth>
+      <NavbarComp />
+      <Container className="my-5">
+        {/* Greeting */}
+        <Row className="mb-4">
           <Col>
-            <Card className="h-100">
+            <h2>Welcome back, {user.full_name || "there"}!</h2>
+            <p className="text-muted">Here's a quick look at your tasks.</p>
+          </Col>
+        </Row>
+
+        {/* Summary Cards */}
+        <Row className="mb-4">
+          {[
+            { label: "Total Tasks", value: total, variant: "primary" },
+            { label: "Ongoing", value: ongoing, variant: "warning" },
+            { label: "Completed", value: completed, variant: "success" },
+          ].map(({ label, value, variant }) => (
+            <Col key={label} md={4} className="mb-3">
+              <Card border={variant}>
+                <Card.Body className="text-center">
+                  <Card.Title>{label}</Card.Title>
+                  <h3>
+                    <span className={`text-${variant}`}>{value}</span>
+                  </h3>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+
+        {/* Tasks Due This Week */}
+        <Row className="mb-4">
+          <Col>
+            <Card>
+              <Card.Header>
+                Tasks Due in the Next 7 Days{" "}
+                <Badge bg="danger">{dueThisWeek.length}</Badge>
+              </Card.Header>
+              <ListGroup variant="flush">
+                {dueThisWeek.length > 0 ? (
+                  dueThisWeek.map((t) => (
+                    <ListGroup.Item
+                      key={t.id}
+                      className="d-flex justify-content-between align-items-center"
+                    >
+                      <span>{t.title}</span>
+                      <small className="text-muted">
+                        {NiceDate(t.due_date)}
+                      </small>
+                    </ListGroup.Item>
+                  ))
+                ) : (
+                  <ListGroup.Item>No tasks due this week</ListGroup.Item>
+                )}
+              </ListGroup>
+              <Card.Footer className="text-end">
+                <Button variant="outline-primary" href="/tasks">
+                  View All Tasks
+                </Button>
+              </Card.Footer>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Placeholder for Other Home Page Sections */}
+        <Row>
+          <Col md={6} className="mb-4">
+            <Card>
+              <Card.Header>Quick Actions</Card.Header>
               <Card.Body>
-                <Card.Title>Responsive Design</Card.Title>
-                <Card.Text>
-                  Create layouts that adapt to any screen size using Bootstrap's
-                  grid system.
-                </Card.Text>
+                <Button variant="primary" href="/tasks/new">
+                  + Add New Task
+                </Button>
               </Card.Body>
             </Card>
           </Col>
-          <Col>
-            <Card className="h-100">
+          <Col md={6} className="mb-4">
+            <Card>
+              <Card.Header>Recent Activity</Card.Header>
               <Card.Body>
-                <Card.Title>Pre-built Components</Card.Title>
-                <Card.Text>
-                  Use buttons, forms, modals, and more out of the box with React
-                  Bootstrap.
-                </Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col>
-            <Card className="h-100">
-              <Card.Body>
-                <Card.Title>Customizable Themes</Card.Title>
-                <Card.Text>
-                  Easily override Bootstrap variables to match your brand's
-                  style.
-                </Card.Text>
+                <p className="text-muted">No recent activity to show.</p>
               </Card.Body>
             </Card>
           </Col>
         </Row>
       </Container>
-
-      {/* Footer Section */}
-      <footer className="bg-dark text-light py-4">
-        <Container className="text-center">
-          <p>© {new Date().getFullYear()} MyApp. All rights reserved.</p>
-          <Nav className="justify-content-center">
-            <Nav.Link href="#privacy" className="text-light">
-              Privacy Policy
-            </Nav.Link>
-            <Nav.Link href="#terms" className="text-light">
-              Terms of Service
-            </Nav.Link>
-          </Nav>
-        </Container>
-      </footer>
-    </>
+    </Auth>
   );
 }
 

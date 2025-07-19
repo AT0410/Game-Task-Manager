@@ -4,16 +4,16 @@ const api = axios.create({
   baseURL: "http://localhost:8000", // Adjust the base URL as needed
 });
 
-const fetchUserID = async (token) => {
+const fetchUser = async (token) => {
   try {
-    const response = await api.get("/userid", {
+    const response = await api.get("/user", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
     return response.data;
   } catch (error) {
-    console.error("Fetch user ID error:", error);
+    console.error("Fetch user error:", error);
     throw error;
   }
 };
@@ -110,4 +110,4 @@ const updateTask = async (token, taskData) => {
 };
 
 export default api;
-export { fetchUserID, registerUser, loginUser, getTasks, addTask, deleteTask, updateTask };
+export { fetchUser, registerUser, loginUser, getTasks, addTask, deleteTask, updateTask };

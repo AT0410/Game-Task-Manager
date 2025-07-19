@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { registerUser, loginUser, fetchUserID } from "../api.js";
+import { registerUser, loginUser, fetchUser } from "../api.js";
 import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext({});
@@ -11,7 +11,7 @@ export function useAuth() {
 
 const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
-  const [userID, setUserID] = useState(-1);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
@@ -24,17 +24,16 @@ const AuthProvider = ({ children }) => {
     }
     const getUser = async () => {
       try {
-        console.log("set userid");
         setLoading(true);
-        const user_id = await fetchUserID(token);
-        setUserID(user_id);
-        console.log("done setting userid");
+        const user = await fetchUser(token);
+        setUser(user);
+        console.log("done setting user");
       } catch (err) {
         if (err.response?.status === 401) {
           logout();
         } else {
-          console.error("Fetch user ID failed:", err);
-          setUserID(-1);
+          console.error("Fetch user failed:", err);
+          setUser(null);
         }
       } finally {
         setLoading(false);
@@ -53,20 +52,20 @@ const AuthProvider = ({ children }) => {
     if (response?.access_token) {
       setToken(response.access_token);
       localStorage.setItem("token", response.access_token);
-      const id = await fetchUserID(response.access_token);
-      setUserID(id);
+      const user = await fetchUser(response.access_token);
+      setUser(user);
       navigate("/profile");
     }
   };
 
   const logout = () => {
     setToken(null);
-    setUserID(-1);
+    setUser(null);
     localStorage.removeItem("token");
   };
 
   return (
-    <AuthContext.Provider value={{ token, userID, login, logout, register, loading }}>
+    <AuthContext.Provider value={{ token, user, login, logout, register, loading }}>
       {children}
     </AuthContext.Provider>
   );

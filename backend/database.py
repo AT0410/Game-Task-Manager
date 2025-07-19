@@ -1,4 +1,4 @@
-from backend.models import UserInDB, UserVerification
+from backend.models import UserInDB, UserVerification, User
 from psycopg2 import pool
 from contextlib import contextmanager
 from typing import Optional
@@ -48,20 +48,18 @@ class UserDatabase:
             )
         return None
         
-    def get_user(self, email: str) -> Optional[UserInDB]:
+    def get_user(self, id: int) -> User:
         query = f"""
-        SELECT * FROM {self.table_name} WHERE email = %s
+        SELECT id, full_name, email FROM {self.table_name} WHERE id = %s
         """
-        result = fetch_query(query, (email,))
+        result = fetch_query(query, (id,))
 
         if result:
             user_data = result[0]
-            return UserInDB(
+            return User(
                 id = user_data[0],
                 full_name=user_data[1],
                 email=user_data[2],
-                hashed_password=user_data[3],
-                disabled=user_data[4]
             )
         return None
     
