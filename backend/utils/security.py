@@ -15,8 +15,7 @@ def verify_password(plain_pw: str, hashed_pw: str) -> bool:
 
 def get_password_hash(pw: str) -> str:
     return pwd_context.hash(pw)
-
-
+    
 def authenticate_user(email: str, pw: str):
     """
     Returns user id 

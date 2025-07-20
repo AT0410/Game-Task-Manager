@@ -54,7 +54,7 @@ const AuthProvider = ({ children }) => {
       localStorage.setItem("token", response.access_token);
       const user = await fetchUser(response.access_token);
       setUser(user);
-      navigate("/profile");
+      navigate("/");
     }
   };
 

@@ -45,6 +45,38 @@ const registerUser = async (userData) => {
   }
 };
 
+const deleteUser = async (token) => {
+  try {
+    await api.delete("/user/delete", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    throw error;
+  }
+};
+
+const updateProfile = async (token, profileData) => {
+  try {
+    await api.patch("/user/updateprofile", profileData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (error) {
+    console.log("Update profile error:", error);
+  }
+};
+
+const changePassword = async (token, passwordData) => {
+  return await api.patch("/user/updatepassword", passwordData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
 const getTasks = async (token) => {
   try {
     const response = await api.get("/user/tasks", {
@@ -110,4 +142,15 @@ const updateTask = async (token, taskData) => {
 };
 
 export default api;
-export { fetchUser, registerUser, loginUser, getTasks, addTask, deleteTask, updateTask };
+export {
+  fetchUser,
+  registerUser,
+  loginUser,
+  updateProfile,
+  getTasks,
+  addTask,
+  deleteTask,
+  updateTask,
+  changePassword,
+  deleteUser,
+};

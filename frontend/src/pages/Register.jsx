@@ -11,7 +11,6 @@ import {
 } from "react-bootstrap";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
-import NavbarComp from "../components/Navbar";
 
 const Register = () => {
   const { register } = useAuth();
@@ -49,7 +48,6 @@ const Register = () => {
 
   return (
     <>
-      <NavbarComp />
       <Container
         fluid
         className={`${bgClass} vh-100 d-flex justify-content-center align-items-center`}

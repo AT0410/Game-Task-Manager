@@ -56,7 +56,6 @@ function Login() {
 
   return (
     <>
-      <NavbarComp />
       <Container
         fluid
         className={`${bgClass} ${textClass} vh-100 d-flex justify-content-center align-items-center`}

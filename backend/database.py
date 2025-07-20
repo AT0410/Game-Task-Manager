@@ -1,4 +1,4 @@
-from backend.models import UserInDB, UserVerification, User
+from backend.models import UserInDB, UserVerification, User, ProfileUpdate
 from psycopg2 import pool
 from contextlib import contextmanager
 from typing import Optional
@@ -47,6 +47,18 @@ class UserDatabase:
                 hashed_password=user_data[1]
             )
         return None
+
+    def is_existing(self, email: str) -> bool:
+        query = f"""SELECT id FROM {self.table_name} WHERE email = %s"""
+        result = fetch_query(query, (email,))
+        return result
+    
+    def get_user_password(self, id: int) -> str:
+        query = f"""
+        SELECT hashed_password FROM {self.table_name} WHERE id = %s
+        """ 
+        hashed_pw = fetch_query(query, (id,))
+        return hashed_pw[0][0]
         
     def get_user(self, id: int) -> User:
         query = f"""
@@ -70,12 +82,34 @@ class UserDatabase:
         """
         execute_query(query, (full_name, email, hashed_password, disabled))
         
-    def delete_user(self, email: str) -> None:
+    def delete_user(self, id: int) -> None:
         query = f"""
-            DELETE FROM {self.table_name} WHERE email = %s;
+            DELETE FROM {self.table_name} WHERE id = %s;
         """
-        execute_query(query, (email,))
+        execute_query(query, (id,))
         
+    def update(self, user_id: int, data: ProfileUpdate):
+        fields   = []
+        vals   = []
+        for field, val in data.model_dump(exclude_unset=True).items():
+            fields.append(f"{field} = %s")
+            vals.append(val)
+        vals.append(user_id)
+        
+        placeholders = ', '.join(fields)
+        query = f"""
+        UPDATE {self.table_name}
+        SET {placeholders}
+        WHERE id = %s
+        """
+        execute_query(query, tuple(vals))
+    
+    def update_password(self, user_id: int, hashed_pw: str):
+        query = f"""UPDATE {self.table_name}
+        SET hashed_password = %s
+        WHERE id = %s
+        """
+        execute_query(query, (hashed_pw, user_id))
 
 class TaskDatabase:
     def __init__(self):

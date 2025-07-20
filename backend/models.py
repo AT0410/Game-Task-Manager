@@ -25,7 +25,15 @@ class UserRegister(BaseModel):
 
 class UserVerification(BaseModel):
     id: int
-    hashed_password: str    
+    hashed_password: str
+    
+class ProfileUpdate(BaseModel):
+    full_name: str
+    email: str
+    
+class PasswordUpdate(BaseModel):
+    current: str
+    new: str
 
 class TaskCreate(BaseModel):
     title: str
