@@ -19,6 +19,7 @@ function Home() {
   const { token, user } = useAuth();
   const [tasks, setTasks] = useState(null);
   const [dueThisWeek, setDueThisWeek] = useState([]);
+  const [overdueTasks, setOverdueTasks] = useState([]);
 
   useEffect(() => {
     async function fetchTasks() {
@@ -32,8 +33,14 @@ function Home() {
           const d = new Date(t.due_date);
           return d >= now && d <= weekAhead && !t.completed;
         });
+        const overdue = data.filter ((t) => {
+          const d = new Date(t.due_date);
+          return d < now && !t.completed;
+        });
+
 
         setDueThisWeek(upcoming);
+        setOverdueTasks(overdue);
       } catch (err) {
         console.error("Failed to load tasks:", err);
       }
@@ -55,6 +62,7 @@ function Home() {
   const total = tasks.length;
   const completed = tasks.filter((t) => t.completed).length;
   const ongoing = total - completed;
+  const overdue = overdueTasks.length;
 
   return (
     <Auth>
@@ -73,9 +81,10 @@ function Home() {
           {[
             { label: "Total Tasks", value: total, variant: "primary" },
             { label: "Ongoing", value: ongoing, variant: "warning" },
+            { label: "Overdue", value: overdue, variant: "danger" },
             { label: "Completed", value: completed, variant: "success" },
           ].map(({ label, value, variant }) => (
-            <Col key={label} md={4} className="mb-3">
+            <Col key={label} md={3} className="mb-3">
               <Card border={variant}>
                 <Card.Body className="text-center">
                   <Card.Title>{label}</Card.Title>
@@ -121,8 +130,42 @@ function Home() {
             </Card>
           </Col>
         </Row>
+        
+        {/* Overdue Tasks */}
+        <Row className="mb-4">
+          <Col>
+            <Card>
+              <Card.Header>
+                Overdue Tasks{" "}
+                <Badge bg="danger">{overdueTasks.length}</Badge>
+              </Card.Header>
+              <ListGroup variant="flush">
+                {overdueTasks.length > 0 ? (
+                  overdueTasks.map((t) => (
+                    <ListGroup.Item
+                      key={t.id}
+                      className="d-flex justify-content-between align-items-center"
+                    >
+                      <span>{t.title}</span>
+                      <small className="text-muted">
+                        {NiceDate(t.due_date)}
+                      </small>
+                    </ListGroup.Item>
+                  ))
+                ) : (
+                  <ListGroup.Item>No overdue tasks</ListGroup.Item>
+                )}
+              </ListGroup>
+              <Card.Footer className="text-end">
+                <Button variant="outline-primary" href="/tasks">
+                  View All Tasks
+                </Button>
+              </Card.Footer>
+            </Card>
+          </Col>
+        </Row>
 
-        {/* Placeholder for Other Home Page Sections */}
+        {/* Placeholder for Other Home Page Sections
         <Row>
           <Col md={6} className="mb-4">
             <Card>
@@ -142,7 +185,7 @@ function Home() {
               </Card.Body>
             </Card>
           </Col>
-        </Row>
+        </Row> */}
       </Container>
     </Auth>
   );

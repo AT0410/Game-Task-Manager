@@ -11,6 +11,7 @@ import {
   Badge,
   Modal,
   Collapse,
+  Dropdown,
 } from "react-bootstrap";
 import NavbarComp from "../components/Navbar";
 import {
@@ -18,9 +19,12 @@ import {
   FaPlus,
   FaCheck,
   FaUndo,
-  FaChevronUp,
   FaEdit,
   FaChevronDown,
+  FaSort,
+  FaChevronUp,
+  FaCaretUp,
+  FaCaretDown,
 } from "react-icons/fa";
 import Auth from "../components/Auth";
 import { useAuth } from "../contexts/AuthContext";
@@ -41,6 +45,11 @@ function Tasks() {
   const [showEdit, setShowEdit] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [sortConfig, setSortConfig] = useState({
+    Due: { field: "due_date", direction: "asc" },
+    Overdue: { field: "due_date", direction: "asc" },
+    Completed: { field: "due_date", direction: "asc" },
+  });
 
   useEffect(() => {
     async function fetchTasks() {
@@ -122,8 +131,62 @@ function Tasks() {
     setShowEdit(false);
   };
 
-  const ongoingTasks = tasks.filter((t) => !t.completed);
+  // Sorting
+  const handleSortChange = (column, field) => {
+    setSortConfig((prev) => {
+      const currentConfig = prev[column];
+      // Toggle direction if same field is clicked again
+      if (currentConfig.field === field) {
+        return {
+          ...prev,
+          [column]: {
+            field,
+            direction: currentConfig.direction === "asc" ? "desc" : "asc",
+          },
+        };
+      }
+      return {
+        ...prev,
+        [column]: { field, direction: "asc" },
+      };
+    });
+  };
+  const sortTasks = (tasks, column) => {
+    const { field, direction } = sortConfig[column];
+    return [...tasks].sort((a, b) => {
+      let valueA, valueB;
+
+      if (field === "due_date") {
+        valueA = new Date(a.due_date).getTime();
+        valueB = new Date(b.due_date).getTime();
+      } else if (field === "title") {
+        valueA = a.title.toLowerCase();
+        valueB = b.title.toLowerCase();
+      } else {
+        return 0;
+      }
+
+      if (valueA < valueB) {
+        return direction === "asc" ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  const dueTasks = tasks.filter((t) => {
+    const d = new Date(t.due_date);
+    const now = new Date();
+    return d >= now && !t.completed;
+  });
   const completedTasks = tasks.filter((t) => t.completed);
+  const overdueTasks = tasks.filter((t) => {
+    const d = new Date(t.due_date);
+    const now = new Date();
+    return d < now && !t.completed;
+  });
 
   const renderTaskItem = (task) => (
     <React.Fragment key={task.id}>
@@ -168,14 +231,23 @@ function Tasks() {
         </div>
       </ListGroup.Item>
       <Collapse in={expandedId === task.id}>
-        <div className="bg-light p-3">
-          <p>
-            <strong>Description:</strong> {task.description || "No description"}
-          </p>
-          <Button size="sm" onClick={() => openEdit(task)}>
-            Edit Details
-          </Button>
-        </div>
+        <Card className="border-top-0 rounded-0 rounded-bottom">
+          <Card.Body className="p-3">
+            <Card.Subtitle className="mb-2 text-muted">
+              Description
+            </Card.Subtitle>
+            <Card.Text className="mb-3">
+              {task.description || "No description"}
+            </Card.Text>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={() => openEdit(task)}
+            >
+              <FaEdit className="me-1" /> Edit Details
+            </Button>
+          </Card.Body>
+        </Card>
       </Collapse>
     </React.Fragment>
   );
@@ -219,29 +291,90 @@ function Tasks() {
         </Row>
 
         <Row>
-          <Col md={6} className="mb-4">
-            <Card>
-              <Card.Header>
-                Ongoing Tasks{" "}
-                <Badge bg="secondary">{ongoingTasks.length}</Badge>
-              </Card.Header>
-              <ListGroup variant="flush">
-                {ongoingTasks.map(renderTaskItem)}
-              </ListGroup>
-            </Card>
-          </Col>
+          {" "}
+          {[
+            { label: "Due", value: dueTasks, colour: "secondary" },
+            { label: "Overdue", value: overdueTasks, colour: "danger" },
+            { label: "Completed", value: completedTasks, colour: "success" },
+          ].map(({ label, value, colour }) => {
+            const sortedTasks = sortTasks(value, label);
+            const currentSort = sortConfig[label];
 
-          <Col md={6} className="mb-4">
-            <Card>
-              <Card.Header>
-                Completed Tasks{" "}
-                <Badge bg="success">{completedTasks.length}</Badge>
-              </Card.Header>
-              <ListGroup variant="flush">
-                {completedTasks.map(renderTaskItem)}
-              </ListGroup>
-            </Card>
-          </Col>
+            return (
+              <Col md={4} className="mb-4" key={label}>
+                <Card>
+                  <Card.Header className="d-flex justify-content-between align-items-center">
+                    <span>
+                      {label + " "}
+                      <Badge bg={colour}>{value.length}</Badge>
+                    </span>
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-secondary"
+                        size="sm"
+                        id={`sort-dropdown-${label}`}
+                      >
+                        <FaSort className="me-1" />
+                        Sort
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item
+                          onClick={() => handleSortChange(label, "due_date")}
+                          active={currentSort.field === "due_date"}
+                        >
+                          <div className="d-flex align-items-center">
+                            <span class="align-middle">
+                              {currentSort.field === "due_date" ? (
+                                currentSort.direction === "asc" ? (
+                                  <FaCaretUp className="me-1" />
+                                ) : (
+                                  <FaCaretDown className="me-1" />
+                                )
+                              ) : (
+                                <span
+                                  style={{
+                                    width: "16px",
+                                    display: "inline-block",
+                                  }}
+                                ></span>
+                              )}
+                              <span>Due Date</span>
+                            </span>
+                          </div>
+                        </Dropdown.Item>
+
+                        <Dropdown.Item
+                          onClick={() => handleSortChange(label, "title")}
+                          active={currentSort.field === "title"}
+                        >
+                          <div className="d-flex align-items-center">
+                            {currentSort.field === "title" ? (
+                              currentSort.direction === "asc" ? (
+                                <FaChevronUp className="me-1" />
+                              ) : (
+                                <FaCaretDown className="me-1" />
+                              )
+                            ) : (
+                              <span
+                                style={{
+                                  width: "16px",
+                                  display: "inline-block",
+                                }}
+                              ></span>
+                            )}
+                            <span>Alphabetical</span>
+                          </div>
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </Card.Header>
+                  <ListGroup variant="flush">
+                    {sortedTasks.map(renderTaskItem)}
+                  </ListGroup>
+                </Card>
+              </Col>
+            );
+          })}
         </Row>
 
         {/* Edit Modal */}
